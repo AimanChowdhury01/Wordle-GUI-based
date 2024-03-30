@@ -78,7 +78,7 @@ public class WordGuesserController {
             char letter = secretWordChars[i];
             int status = letterStatuses[i];
 
-            Label letterLabel = new Label(String.valueOf(letter));
+            Label letterLabel = new Label();
 
             // Set font and size
             letterLabel.setFont(Font.font("Arial", 20));
@@ -87,12 +87,20 @@ public class WordGuesserController {
             if (status == Guess.LetterStates.EXACT_MATCH.ordinal()) {
                 // Correct letter
                 letterLabel.setTextFill(Color.GREEN);
+                letterLabel.setText(String.valueOf(letter));
             } else if (status == Guess.LetterStates.IN_WORD.ordinal()) {
                 // Letter is in the word but not in the correct position
                 letterLabel.setTextFill(Color.ORANGE);
+                letterLabel.setText(String.valueOf(letter));
             } else {
                 // No match
                 letterLabel.setTextFill(Color.RED);
+                // Display the wrong input until after the 6th guess
+                if (wrongGuesses <= MAX_CHANCES) {
+                    letterLabel.setText(guessField.getText().length() > i ? String.valueOf(guessField.getText().charAt(i)) : "");
+                } else {
+                    letterLabel.setText("");
+                }
             }
 
             // Add the letterLabel to the wordGrid
