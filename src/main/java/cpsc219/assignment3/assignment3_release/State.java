@@ -69,7 +69,7 @@ public class State {
            hasWin = true;
        }
 
-       return true;
+       return hasWin;
    }
 
     public GuessResult getLastResult() {
