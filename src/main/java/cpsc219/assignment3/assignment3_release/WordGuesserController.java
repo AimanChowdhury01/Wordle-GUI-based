@@ -46,12 +46,12 @@ public class WordGuesserController {
 
         // Valid guess check
         if (!myGame.wasGoodGuess()) {
-            statusLabel.setText("Invalid guess. Word is not valid");
+            statusLabel.setText("Invalid guess. Type in 5 letter word");
         } else {
-            updateStatusBasedOnGuess(currentGuess);
+            updateStatus(currentGuess);
         }
 
-        // Check if game is over
+        // Check if game over
         if (myGame.isGameOver() || currentGuess.hasWin()) {
             if (currentGuess.hasWin()) {
                 displayWinningRow(currentGuess);
@@ -59,55 +59,75 @@ public class WordGuesserController {
                 displayCorrectWordRow();
             }
         } else {
-            guessField.clear(); // Clear the guess
+            guessField.clear();
         }
     }
 
-    private void updateStatusBasedOnGuess(Guess currentGuess) {
-        wrongGuesses++;
+    private void updateStatus(Guess currentGuess) {
+        String secretWord = currentGuess.getSecretWord().toLowerCase(); // Convert secret word to lowercase
+        String guessedWord = guessField.getText().toLowerCase(); // Convert guessed word to lowercase just in case to avoid sensitivity issue, can remove in final version
 
-        StringBuilder statusMessage = new StringBuilder();
-        int[] letterStatuses = currentGuess.getLetterStatus();
-        char[] secretWordChars = currentGuess.getSecretWord().toCharArray();
+        // Check if the guesse longer than 5 letters
+        if (guessedWord.length() > 5) {
+            statusLabel.setText("Invalid Guess, type in 5 letter word");
+            return; // Skip further processing
+        }
 
-        // Clear the wordGrid before updating
-        wordGrid.getChildren().clear();
+        // Check if the guess was a win
+        boolean isWin = currentGuess.hasWin();
 
-        // Build a status message and populate the wordGrid based on the letter status
-        for (int i = 0; i < letterStatuses.length; i++) {
-            char letter = secretWordChars[i];
-            int status = letterStatuses[i];
+        // Decrement wrongGuesses if the guess was not a win
+        if (!isWin) {
+            wrongGuesses++;
+        }
 
-            Label letterLabel = new Label();
+        // Decrement remaining attempts if the guess was a win
+        int remainingAttempts = MAX_CHANCES - wrongGuesses;
+        if (isWin) {
+            remainingAttempts--;
+        }
 
-            // Set font and size
+        // Check if the game is over and display appropriate message
+        if (isWin) {
+            statusLabel.setText("Congratulations! You've guessed the word!");
+        } else if (remainingAttempts <= 0) {
+            statusLabel.setText("Sorry, you've reached the maximum number of attempts.");
+        } else {
+            // Update status label to show remaining attempts
+            statusLabel.setText("You have " + remainingAttempts + " attempts left.");
+        }
+
+        // Populate the wordGrid with previous guesses and their results
+        for (int i = 0; i < secretWord.length(); i++) {
+            char guessedChar = (i < guessedWord.length()) ? guessedWord.charAt(i) : ' ';
+            char secretChar = secretWord.charAt(i);
+
+            Label letterLabel = new Label(String.valueOf(guessedChar));
             letterLabel.setFont(Font.font("Arial", 20));
 
-            // Set color based on letter status
-            if (status == Guess.LetterStates.EXACT_MATCH.ordinal()) {
-                // Correct letter
-                letterLabel.setTextFill(Color.GREEN);
-                letterLabel.setText(String.valueOf(letter));
-            } else if (status == Guess.LetterStates.IN_WORD.ordinal()) {
-                // Letter is in the word but not in the correct position
-                letterLabel.setTextFill(Color.ORANGE);
-                letterLabel.setText(String.valueOf(letter));
+            // Determine the color of the guessed letter based on its correctness
+            if (Character.toLowerCase(guessedChar) == secretChar) { // Compare lowercase characters
+                letterLabel.setTextFill(Color.GREEN); // Correct letter
+            } else if (secretWord.indexOf(Character.toLowerCase(guessedChar)) != -1) {
+                letterLabel.setTextFill(Color.ORANGE); // Letter is in the word but not in the correct position
             } else {
-                // No match
-                letterLabel.setTextFill(Color.RED);
-                // Display the wrong input until after the 6th guess
-                if (wrongGuesses <= MAX_CHANCES) {
-                    letterLabel.setText(guessField.getText().length() > i ? String.valueOf(guessField.getText().charAt(i)) : "");
-                } else {
-                    letterLabel.setText("");
-                }
+                letterLabel.setTextFill(Color.RED); // No match
             }
 
             // Add the letterLabel to the wordGrid
-            wordGrid.add(letterLabel, i, 0);
+            wordGrid.add(letterLabel, i, wrongGuesses - 1); // Display the guess in the corresponding row
+        }
+
+        // If the guess was a win, display the correct word in green in the next row
+        if (isWin) {
+            for (int i = 0; i < secretWord.length(); i++) {
+                Label letterLabel = new Label(String.valueOf(secretWord.charAt(i)));
+                letterLabel.setFont(Font.font("Arial", 20));
+                letterLabel.setTextFill(Color.GREEN); // Correct word
+                wordGrid.add(letterLabel, i, wrongGuesses); // Display the correct word in the next row
+            }
         }
     }
-
     private void displayWinningRow(Guess currentGuess) {
         // Display all green letters with the correct word in the last row
         char[] secretWordChars = currentGuess.getSecretWord().toCharArray();

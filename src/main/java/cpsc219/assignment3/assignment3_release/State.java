@@ -75,4 +75,7 @@ public class State {
     public GuessResult getLastResult() {
         return lastResult;
     }
+
+    public String getSecretWord() {
+    return secretWord;}
 }
